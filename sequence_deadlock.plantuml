@@ -1,0 +1,36 @@
+@startuml deadlock
+participant ThreadA as A
+participant ThreadB as B
+database    database    as DB
+
+
+activate A
+A -> DB : BEGIN
+A -> DB : INSERT
+A <- DB : created.
+
+activate B
+B -> DB : SELECT
+B <- DB : Record Not Fount
+note right
+   ThreadA の INSERT が未確定なので見つからない
+   ロックも取ろうとしていないので結果が返ってしまう
+end note
+B -> DB : BEGIN
+B -> DB : INSERT
+note right
+   INSERTしようとするが、ThreadAに未確定の更新があるので完了しない
+end note
+
+A -> DB : COMMIT
+deactivate A
+
+B <- DB : Record Not Unique
+note right
+   ThreadAの更新が確定されたのでINSERTしようとするが
+   ThreadAと同じ値が書き込まれているので一意制約違反となる
+end note
+B -> DB : ROLLBACK
+
+deactivate B
+@enduml

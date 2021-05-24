@@ -1,0 +1,24 @@
+@startuml okay
+participant ThreadA as A
+participant ThreadB as B
+database    database    as DB
+
+
+activate A
+A -> DB : BEGIN
+A -> DB : INSERT
+A <- DB : created.
+
+activate B
+B -> DB : BEGIN
+B -> DB : SELECT FOR UPDATE
+note right
+   SELECT FOR UPDATE で悲観ロックを取ろうとするが
+   ThreadAに未確定のトランザクションがあるのでロック待ちをする
+end note
+A -> DB : COMMIT
+deactivate A
+B <- DB : Record Found
+deactivate B
+
+@enduml
